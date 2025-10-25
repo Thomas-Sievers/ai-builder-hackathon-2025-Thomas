@@ -58,7 +58,7 @@ export async function signOut() {
   if (error) throw error
 }
 
-export async function signInWithOAuth(provider: 'google' | 'discord' | 'steam' | 'epic' | 'riot') {
+export async function signInWithOAuth(provider: 'google' | 'discord') {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {

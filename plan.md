@@ -42,21 +42,21 @@ Building an MVP social media platform for the esports community - a professional
 **Goal**: Set up Supabase backend and implement authentication system
 
 ### Tasks:
-- [ ] Create Supabase project and configure database
-- [ ] Design and implement database schema:
-  - [ ] Users table with esports-specific fields
-  - [ ] Posts table for content sharing
-  - [ ] Championships table for tournaments (user-submitted)
-  - [ ] Teams table for team pages
-  - [ ] User relationships (followers, connections)
-  - [ ] Premium subscriptions table
-  - [ ] Game-specific rank fields (CS2, LoL, Valorant, Dota 2)
-- [ ] Set up Supabase client configuration
-- [ ] Implement authentication with email/password
-- [ ] Configure OAuth providers (Discord, Steam, Epic Games, Riot, Google)
-- [ ] Create authentication middleware and utilities
-- [ ] Set up Row Level Security (RLS) policies
-- [ ] Create database types and interfaces
+- [x] Create Supabase project and configure database
+- [x] Design and implement database schema:
+  - [x] Users table with esports-specific fields
+  - [x] Posts table for content sharing
+  - [x] Championships table for tournaments (user-submitted)
+  - [x] Teams table for team pages
+  - [x] User relationships (followers, connections)
+  - [x] Premium subscriptions table
+  - [x] Game-specific rank fields (CS2, LoL, Valorant, Dota 2)
+- [x] Set up Supabase client configuration
+- [x] Implement authentication with email/password
+- [x] Configure OAuth providers (Discord, Steam, Epic Games, Riot, Google)
+- [x] Create authentication middleware and utilities
+- [x] Set up Row Level Security (RLS) policies
+- [x] Create database types and interfaces
 
 ### Deliverables:
 - Fully configured Supabase backend

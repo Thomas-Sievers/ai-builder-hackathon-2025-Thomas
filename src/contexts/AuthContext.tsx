@@ -12,7 +12,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string, username: string, displayName: string) => Promise<void>
   signOut: () => Promise<void>
-  signInWithOAuth: (provider: 'google' | 'discord' | 'steam' | 'epic' | 'riot') => Promise<void>
+  signInWithOAuth: (provider: 'google' | 'discord') => Promise<void>
   updateProfile: (updates: any) => Promise<void>
 }
 
@@ -94,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error
   }
 
-  const signInWithOAuth = async (provider: 'google' | 'discord' | 'steam' | 'epic' | 'riot') => {
+  const signInWithOAuth = async (provider: 'google' | 'discord') => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {

@@ -50,7 +50,7 @@ export default function SignUp() {
     }
   }
 
-  const handleOAuthSignIn = async (provider: 'google' | 'discord' | 'steam' | 'epic' | 'riot') => {
+  const handleOAuthSignIn = async (provider: 'google' | 'discord') => {
     try {
       await signInWithOAuth(provider)
     } catch (error: any) {
