@@ -111,6 +111,13 @@ export async function getUserProfile(userId: string) {
     .eq('id', userId)
     .single()
 
-  if (error) throw error
+  if (error) {
+    // If user doesn't exist in our users table, return null instead of throwing
+    if (error.code === 'PGRST116') {
+      console.log('User not found in users table, returning null')
+      return null
+    }
+    throw error
+  }
   return data
 }

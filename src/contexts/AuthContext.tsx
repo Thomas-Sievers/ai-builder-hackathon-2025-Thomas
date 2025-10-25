@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
-import { getUserProfile } from '@/lib/auth'
+import { getUserProfile, signUp as authSignUp } from '@/lib/auth'
 
 interface AuthContextType {
   user: User | null
@@ -31,10 +31,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (session?.user) {
         try {
-          const userProfile = await getUserProfile(session.user.id)
-          setProfile(userProfile)
+          let userProfile = await getUserProfile(session.user.id)
+          
+          // If user doesn't exist in our database yet (OAuth sign-in), create a basic profile
+          if (!userProfile) {
+            console.log('Creating user profile for OAuth user:', session.user.id)
+            const { error: insertError } = await supabase
+              .from('users')
+              .insert({
+                id: session.user.id,
+                email: session.user.email!,
+                username: session.user.user_metadata?.username || session.user.email!.split('@')[0],
+                display_name: session.user.user_metadata?.display_name || session.user.user_metadata?.full_name || session.user.email!.split('@')[0],
+                avatar_url: session.user.user_metadata?.avatar_url || null,
+              })
+            
+            if (insertError) {
+              console.error('Error creating user profile:', insertError)
+              setProfile(null)
+            } else {
+              // Fetch the newly created profile
+              userProfile = await getUserProfile(session.user.id)
+              setProfile(userProfile)
+            }
+          } else {
+            setProfile(userProfile)
+          }
         } catch (error) {
           console.error('Error fetching user profile:', error)
+          console.error('User ID:', session.user.id)
+          console.error('Error details:', JSON.stringify(error, null, 2))
+          setProfile(null)
         }
       }
       
@@ -50,10 +77,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (session?.user) {
           try {
-            const userProfile = await getUserProfile(session.user.id)
-            setProfile(userProfile)
+            let userProfile = await getUserProfile(session.user.id)
+            
+            // If user doesn't exist in our database yet (OAuth sign-in), create a basic profile
+            if (!userProfile) {
+              console.log('Creating user profile for OAuth user:', session.user.id)
+              const { error: insertError } = await supabase
+                .from('users')
+                .insert({
+                  id: session.user.id,
+                  email: session.user.email!,
+                  username: session.user.user_metadata?.username || session.user.email!.split('@')[0],
+                  display_name: session.user.user_metadata?.display_name || session.user.user_metadata?.full_name || session.user.email!.split('@')[0],
+                  avatar_url: session.user.user_metadata?.avatar_url || null,
+                })
+              
+              if (insertError) {
+                console.error('Error creating user profile:', insertError)
+                setProfile(null)
+              } else {
+                // Fetch the newly created profile
+                userProfile = await getUserProfile(session.user.id)
+                setProfile(userProfile)
+              }
+            } else {
+              setProfile(userProfile)
+            }
           } catch (error) {
             console.error('Error fetching user profile:', error)
+            console.error('User ID:', session.user.id)
+            console.error('Error details:', JSON.stringify(error, null, 2))
             setProfile(null)
           }
         } else {
@@ -76,17 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signUp = async (email: string, password: string, username: string, displayName: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          username,
-          display_name: displayName,
-        },
-      },
-    })
-    if (error) throw error
+    await authSignUp(email, password, username, displayName)
   }
 
   const signOut = async () => {
