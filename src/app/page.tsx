@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -12,8 +13,12 @@ export default function Home() {
               <h1 className="text-2xl font-bold neon-blue">EsportsConnect</h1>
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="ghost">Sign In</Button>
-              <Button className="neon-border">Get Started</Button>
+              <Button variant="ghost" asChild>
+                <Link href="/auth/signin">Sign In</Link>
+              </Button>
+              <Button className="neon-border" asChild>
+                <Link href="/auth/signup">Get Started</Link>
+              </Button>
             </div>
           </div>
         </div>
@@ -31,11 +36,11 @@ export default function Home() {
             Connect with players, teams, and scouts in the gaming community.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="neon-border neon-glow">
-              Start Your Journey
+            <Button size="lg" className="neon-border neon-glow" asChild>
+              <Link href="/auth/signup">Start Your Journey</Link>
             </Button>
-            <Button size="lg" variant="outline">
-              Explore Championships
+            <Button size="lg" variant="outline" asChild>
+              <Link href="/championships">Explore Championships</Link>
             </Button>
           </div>
         </div>
