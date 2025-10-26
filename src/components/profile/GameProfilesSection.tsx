@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { GameProfileForm } from './GameProfileForm'
 import { Database } from '@/types/database'
+import { Zap, Sword, Target, Shield } from 'lucide-react'
 
 type UserProfile = Database['public']['Tables']['user_profiles']['Row']
 
@@ -19,14 +20,16 @@ const GAME_INFO = {
   cs2: {
     name: 'Counter-Strike 2',
     shortName: 'CS2',
-    color: 'bg-orange-600',
+    color: 'text-orange-400',
+    icon: Zap,
     ranks: ['Silver I', 'Silver II', 'Silver III', 'Silver IV', 'Silver Elite', 'Silver Elite Master', 'Gold Nova I', 'Gold Nova II', 'Gold Nova III', 'Gold Nova Master', 'Master Guardian I', 'Master Guardian II', 'Master Guardian Elite', 'Distinguished Master Guardian', 'Legendary Eagle', 'Legendary Eagle Master', 'Supreme Master First Class', 'Global Elite'],
     roles: ['Entry Fragger', 'Support', 'AWPer', 'IGL', 'Lurker', 'Rifler']
   },
   lol: {
     name: 'League of Legends',
     shortName: 'LoL',
-    color: 'bg-blue-600',
+    color: 'text-blue-400',
+    icon: Sword,
     ranks: ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Master', 'Grandmaster', 'Challenger'],
     divisions: ['IV', 'III', 'II', 'I'],
     roles: ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
@@ -34,14 +37,16 @@ const GAME_INFO = {
   valorant: {
     name: 'Valorant',
     shortName: 'Valorant',
-    color: 'bg-red-600',
+    color: 'text-red-400',
+    icon: Target,
     ranks: ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Ascendant', 'Immortal', 'Radiant'],
     roles: ['Duelist', 'Initiator', 'Controller', 'Sentinel']
   },
   dota2: {
     name: 'Dota 2',
     shortName: 'Dota 2',
-    color: 'bg-green-600',
+    color: 'text-green-400',
+    icon: Shield,
     medals: ['Herald', 'Guardian', 'Crusader', 'Archon', 'Legend', 'Ancient', 'Divine', 'Immortal'],
     roles: ['Carry', 'Mid', 'Offlane', 'Soft Support', 'Hard Support']
   }
@@ -74,14 +79,14 @@ export function GameProfilesSection({ gameProfiles, onUpdate, isEditing }: GameP
       )
     }
 
+    const IconComponent = gameInfo.icon
+
     return (
       <Card className="bg-gray-800 border-gray-700">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className={`w-8 h-8 rounded ${gameInfo.color} flex items-center justify-center`}>
-                <span className="text-white text-sm font-bold">{gameInfo.shortName}</span>
-              </div>
+              <IconComponent className={`w-8 h-8 ${gameInfo.color}`} />
               <CardTitle className="text-white">{gameInfo.name}</CardTitle>
             </div>
             {isEditing && (

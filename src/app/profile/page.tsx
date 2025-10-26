@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
+import { NavBar } from '@/components/NavBar'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ProfileForm } from '@/components/profile/ProfileForm'
@@ -133,7 +134,7 @@ export default function ProfilePage() {
 
   if (loading || loadingProfile) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-blue-400 text-xl">Loading profile...</div>
       </div>
     )
@@ -141,16 +142,18 @@ export default function ProfilePage() {
 
   if (!user || !profile) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-red-400 text-xl">Profile not found</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-gray-900 text-white">
+      <NavBar />
+      
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="max-w-3xl mx-auto space-y-6">
           {/* Header */}
           <div className="flex justify-between items-center">
             <h1 className="text-3xl font-bold text-blue-400">My Profile</h1>
@@ -173,12 +176,6 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Profile Completion Indicator */}
-          <ProfileCompletionIndicator 
-            profile={profile} 
-            gameProfiles={gameProfiles} 
-          />
-
           {/* Profile Form or Display */}
           {isEditing ? (
             <ProfileForm
@@ -189,6 +186,12 @@ export default function ProfilePage() {
           ) : (
             <ProfileDisplay profile={profile} />
           )}
+
+          {/* Profile Completion Indicator */}
+          <ProfileCompletionIndicator 
+            profile={profile} 
+            gameProfiles={gameProfiles} 
+          />
 
           {/* Game Profiles Section */}
           <GameProfilesSection

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
+import { NavBar } from '@/components/NavBar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -73,7 +74,7 @@ export default function PublicProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-blue-400 text-xl">Loading profile...</div>
       </div>
     )
@@ -81,7 +82,7 @@ export default function PublicProfilePage() {
 
   if (error || !profile) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="text-red-400 text-xl">{error || 'Profile not found'}</div>
           <Button
@@ -97,9 +98,11 @@ export default function PublicProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-gray-900 text-white">
+      <NavBar />
+      
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="max-w-3xl mx-auto space-y-6">
           {/* Header */}
           <div className="flex justify-between items-center">
             <h1 className="text-3xl font-bold text-blue-400">{profile.display_name}</h1>
