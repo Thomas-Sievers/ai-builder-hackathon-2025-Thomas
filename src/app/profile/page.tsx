@@ -10,7 +10,6 @@ import { ProfileForm } from '@/components/profile/ProfileForm'
 import { ProfileDisplay } from '@/components/profile/ProfileDisplay'
 import { GameProfilesSection } from '@/components/profile/GameProfilesSection'
 import { ProfileCompletionIndicator } from '@/components/profile/ProfileCompletionIndicator'
-import { HighlightReel } from '@/components/profile/HighlightReel'
 import { PrivacySettings } from '@/components/profile/PrivacySettings'
 import { PostCard } from '@/components/posts/PostCard'
 import { supabase } from '@/lib/supabase'
@@ -224,12 +223,6 @@ export default function ProfilePage() {
           <GameProfilesSection
             gameProfiles={gameProfiles}
             onUpdate={handleGameProfileUpdate}
-            isEditing={isEditing}
-          />
-
-          {/* Highlight Reel */}
-          <HighlightReel
-            userId={user.id}
             isEditing={isEditing}
           />
 
