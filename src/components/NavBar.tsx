@@ -19,7 +19,7 @@ export function NavBar() {
               <div className="w-8 h-8 bg-cyan-400 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold">E</span>
               </div>
-              <span className="text-white text-xl font-bold">EsportsNet</span>
+              <span className="text-white text-xl font-bold">EsportsConnect</span>
             </Link>
           </div>
 
