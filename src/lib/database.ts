@@ -114,11 +114,7 @@ export async function createPost(postData: {
     })
     .select(`
       *,
-      users (*),
-      original_post:posts!posts_original_post_id_fkey (
-        *,
-        users (*)
-      )
+      users (*)
     `)
     .single()
 
@@ -136,18 +132,30 @@ export async function getPosts(limit = 20, offset = 0) {
     .from('posts')
     .select(`
       *,
-      users (*),
-      original_post:posts!posts_original_post_id_fkey (
-        *,
-        users (*)
-      )
+      users (*)
     `)
     .eq('is_public', true)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
 
   if (error) throw error
-  return data
+  
+  // Fetch original posts for reposts
+  const postsWithOriginal = await Promise.all(
+    (data || []).map(async (post) => {
+      if (post.is_repost && post.original_post_id) {
+        const { data: originalPost } = await supabase
+          .from('posts')
+          .select('*, users (*)')
+          .eq('id', post.original_post_id)
+          .single()
+        return { ...post, original_post: originalPost }
+      }
+      return post
+    })
+  )
+  
+  return postsWithOriginal
 }
 
 export async function getPostsWithFilters(filters?: {
@@ -161,11 +169,7 @@ export async function getPostsWithFilters(filters?: {
     .from('posts')
     .select(`
       *,
-      users (*),
-      original_post:posts!posts_original_post_id_fkey (
-        *,
-        users (*)
-      )
+      users (*)
     `)
     .eq('is_public', true)
     .order('created_at', { ascending: false })
@@ -192,7 +196,23 @@ export async function getPostsWithFilters(filters?: {
     console.error('Error in getPostsWithFilters:', error)
     throw error
   }
-  return data
+  
+  // Fetch original posts for reposts
+  const postsWithOriginal = await Promise.all(
+    (data || []).map(async (post) => {
+      if (post.is_repost && post.original_post_id) {
+        const { data: originalPost } = await supabase
+          .from('posts')
+          .select('*, users (*)')
+          .eq('id', post.original_post_id)
+          .single()
+        return { ...post, original_post: originalPost }
+      }
+      return post
+    })
+  )
+  
+  return postsWithOriginal
 }
 
 export async function getPostsByUser(userId: string, limit = 20, offset = 0) {
@@ -200,18 +220,30 @@ export async function getPostsByUser(userId: string, limit = 20, offset = 0) {
     .from('posts')
     .select(`
       *,
-      users (*),
-      original_post:posts!posts_original_post_id_fkey (
-        *,
-        users (*)
-      )
+      users (*)
     `)
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
 
   if (error) throw error
-  return data
+  
+  // Fetch original posts for reposts
+  const postsWithOriginal = await Promise.all(
+    (data || []).map(async (post) => {
+      if (post.is_repost && post.original_post_id) {
+        const { data: originalPost } = await supabase
+          .from('posts')
+          .select('*, users (*)')
+          .eq('id', post.original_post_id)
+          .single()
+        return { ...post, original_post: originalPost }
+      }
+      return post
+    })
+  )
+  
+  return postsWithOriginal
 }
 
 // Championship operations
@@ -841,15 +873,26 @@ export async function repostPost(originalPostId: string, userId: string, comment
     })
     .select(`
       *,
-      users (*),
-      original_post:posts!posts_original_post_id_fkey (
-        *,
-        users (*)
-      )
+      users (*)
     `)
     .single()
 
   if (error) throw error
-  return data
+  
+  // Fetch the original post with user data
+  const { data: originalPostWithUser, error: fetchOriginalError } = await supabase
+    .from('posts')
+    .select(`
+      *,
+      users (*)
+    `)
+    .eq('id', originalPostId)
+    .single()
+
+  // Add original post data to the repost
+  return {
+    ...data,
+    original_post: originalPostWithUser
+  }
 }
 
