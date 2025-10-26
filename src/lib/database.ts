@@ -110,10 +110,15 @@ export async function createPost(postData: {
       image_url: postData.image_url,
       tags: postData.tags || [],
       is_public: postData.is_public ?? true,
+      is_repost: false,
     })
     .select(`
       *,
-      users (*)
+      users (*),
+      original_post:posts!posts_original_post_id_fkey (
+        *,
+        users (*)
+      )
     `)
     .single()
 
@@ -131,7 +136,11 @@ export async function getPosts(limit = 20, offset = 0) {
     .from('posts')
     .select(`
       *,
-      users (*)
+      users (*),
+      original_post:posts!posts_original_post_id_fkey (
+        *,
+        users (*)
+      )
     `)
     .eq('is_public', true)
     .order('created_at', { ascending: false })
@@ -152,7 +161,11 @@ export async function getPostsWithFilters(filters?: {
     .from('posts')
     .select(`
       *,
-      users (*)
+      users (*),
+      original_post:posts!posts_original_post_id_fkey (
+        *,
+        users (*)
+      )
     `)
     .eq('is_public', true)
     .order('created_at', { ascending: false })
@@ -187,7 +200,11 @@ export async function getPostsByUser(userId: string, limit = 20, offset = 0) {
     .from('posts')
     .select(`
       *,
-      users (*)
+      users (*),
+      original_post:posts!posts_original_post_id_fkey (
+        *,
+        users (*)
+      )
     `)
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
@@ -792,5 +809,47 @@ export async function deletePost(postId: string) {
     .eq('id', postId)
 
   if (error) throw error
+}
+
+export async function repostPost(originalPostId: string, userId: string, comment?: string) {
+  // First, get the original post
+  const { data: originalPost, error: fetchError } = await supabase
+    .from('posts')
+    .select('*')
+    .eq('id', originalPostId)
+    .single()
+
+  if (fetchError || !originalPost) {
+    throw new Error('Original post not found')
+  }
+
+  // Create the repost
+  const { data, error } = await supabase
+    .from('posts')
+    .insert({
+      user_id: userId,
+      title: originalPost.title,
+      content: originalPost.content,
+      type: originalPost.type,
+      video_url: originalPost.video_url,
+      image_url: originalPost.image_url,
+      tags: originalPost.tags,
+      is_public: originalPost.is_public,
+      original_post_id: originalPostId,
+      is_repost: true,
+      repost_comment: comment || null,
+    })
+    .select(`
+      *,
+      users (*),
+      original_post:posts!posts_original_post_id_fkey (
+        *,
+        users (*)
+      )
+    `)
+    .single()
+
+  if (error) throw error
+  return data
 }
 

@@ -110,6 +110,9 @@ export interface Database {
           updated_at: string
           likes_count: number
           comments_count: number
+          original_post_id: string | null
+          is_repost: boolean
+          repost_comment: string | null
         }
         Insert: {
           id?: string
@@ -125,6 +128,9 @@ export interface Database {
           updated_at?: string
           likes_count?: number
           comments_count?: number
+          original_post_id?: string | null
+          is_repost?: boolean
+          repost_comment?: string | null
         }
         Update: {
           id?: string
@@ -140,6 +146,9 @@ export interface Database {
           updated_at?: string
           likes_count?: number
           comments_count?: number
+          original_post_id?: string | null
+          is_repost?: boolean
+          repost_comment?: string | null
         }
       }
       championships: {

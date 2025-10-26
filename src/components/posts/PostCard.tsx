@@ -11,12 +11,16 @@ import { Input } from '@/components/ui/input'
 import { Database } from '@/types/database'
 import { formatDistanceToNow } from 'date-fns'
 import { toast } from 'sonner'
-import { Heart, MessageCircle, Share2, MoreHorizontal, Edit, Trash2, Eye, EyeOff, Copy, Check } from 'lucide-react'
-import { likePost, unlikePost, isPostLiked } from '@/lib/database'
+import { Heart, MessageCircle, Share2, MoreHorizontal, Edit, Trash2, Eye, EyeOff, Copy, Check, Repeat } from 'lucide-react'
+import { likePost, unlikePost, isPostLiked, repostPost } from '@/lib/database'
 import { Comments } from './Comments'
+import { Textarea } from '@/components/ui/textarea'
 
 type Post = Database['public']['Tables']['posts']['Row'] & {
   users: Database['public']['Tables']['users']['Row']
+  original_post?: {
+    users: Database['public']['Tables']['users']['Row']
+  } & Database['public']['Tables']['posts']['Row']
 }
 
 interface PostCardProps {
@@ -40,6 +44,9 @@ export function PostCard({
   const [showComments, setShowComments] = useState(false)
   const [showFullContent, setShowFullContent] = useState(false)
   const [showShareDialog, setShowShareDialog] = useState(false)
+  const [showRepostDialog, setShowRepostDialog] = useState(false)
+  const [repostComment, setRepostComment] = useState('')
+  const [isReposting, setIsReposting] = useState(false)
   const [copied, setCopied] = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -111,6 +118,26 @@ export function PostCard({
     }
   }
 
+  const handleRepost = async () => {
+    if (!currentUserId) {
+      toast.error('Please sign in to repost')
+      return
+    }
+
+    try {
+      setIsReposting(true)
+      await repostPost(post.id, currentUserId, repostComment.trim() || undefined)
+      setShowRepostDialog(false)
+      setRepostComment('')
+      toast.success('Post reposted successfully!')
+    } catch (error) {
+      console.error('Error reposting:', error)
+      toast.error('Failed to repost')
+    } finally {
+      setIsReposting(false)
+    }
+  }
+
   const getVideoEmbedUrl = (url: string) => {
     try {
       // YouTube
@@ -135,28 +162,42 @@ export function PostCard({
     }
   }
 
+  const isRepost = post.is_repost && !!post.original_post
+  const displayPost = isRepost ? post.original_post! : post
+
   return (
     <Card className="bg-gray-800 border-gray-700 p-4 hover:border-gray-600 transition-colors mb-4">
+      {/* Repost indicator */}
+      {isRepost && (
+        <div className="flex items-center gap-2 mb-3 text-gray-400 text-sm">
+          <Repeat className="w-4 h-4" />
+          <span>{post.users.display_name} reposted</span>
+          {post.repost_comment && (
+            <div className="mt-2 p-2 bg-gray-700 rounded text-gray-200">{post.repost_comment}</div>
+          )}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
           <Avatar className="w-10 h-10">
-            <AvatarImage src={post.users.avatar_url || ''} />
+            <AvatarImage src={(isRepost && post.original_post?.users ? post.original_post.users : post.users).avatar_url || ''} />
             <AvatarFallback className="bg-cyan-400 text-gray-900">
-              {post.users.display_name.charAt(0).toUpperCase()}
+              {(isRepost && post.original_post?.users ? post.original_post.users : post.users).display_name.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-white">{post.users.display_name}</h3>
-              {post.users.is_verified && (
+              <h3 className="font-semibold text-white">{(isRepost && post.original_post?.users ? post.original_post.users : post.users).display_name}</h3>
+              {(isRepost && post.original_post?.users ? post.original_post.users : post.users).is_verified && (
                 <Badge variant="secondary" className="bg-cyan-400/20 text-cyan-300 text-xs">
                   Verified
                 </Badge>
               )}
             </div>
             <p className="text-sm text-gray-400">
-              @{post.users.username} • {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+              @{(isRepost && post.original_post?.users ? post.original_post.users : post.users).username} • {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
             </p>
           </div>
         </div>
@@ -191,28 +232,19 @@ export function PostCard({
 
       {/* Post Content */}
       <div className="mb-3">
-        <h2 className="text-base font-semibold text-white mb-2">{post.title}</h2>
+        <h2 className="text-base font-semibold text-white mb-2">{displayPost.title}</h2>
         
-        {post.type === 'text' && post.content && (
+        {displayPost.type === 'text' && displayPost.content && (
           <div className="text-gray-300 whitespace-pre-wrap">
-            {displayContent}
-            {contentPreview && (
-              <Button
-                variant="link"
-                onClick={() => setShowFullContent(!showFullContent)}
-                className="text-cyan-400 p-0 h-auto font-normal"
-              >
-                {showFullContent ? 'Show less' : 'Show more'}
-              </Button>
-            )}
+            {displayPost.content}
           </div>
         )}
 
-        {post.type === 'video' && post.video_url && (
+        {displayPost.type === 'video' && displayPost.video_url && (
           <div className="mt-4">
             <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
               <iframe
-                src={getVideoEmbedUrl(post.video_url)}
+                src={getVideoEmbedUrl(displayPost.video_url)}
                 className="absolute top-0 left-0 w-full h-full rounded-lg"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -227,16 +259,16 @@ export function PostCard({
               />
             </div>
             <p className="text-xs text-gray-500 mt-2">
-              Video URL: {post.video_url}
+              Video URL: {displayPost.video_url}
             </p>
           </div>
         )}
 
-        {post.type === 'image' && post.image_url && (
+        {displayPost.type === 'image' && displayPost.image_url && (
           <div className="mt-4">
             <img
-              src={post.image_url}
-              alt={post.title}
+              src={displayPost.image_url}
+              alt={displayPost.title}
               className="w-full max-w-md rounded-lg"
               onError={(e) => {
                 console.error('Image failed to load:', e)
@@ -247,7 +279,7 @@ export function PostCard({
               }}
             />
             <p className="text-xs text-gray-500 mt-2">
-              Image URL: {post.image_url}
+              Image URL: {displayPost.image_url}
             </p>
           </div>
         )}
@@ -298,6 +330,14 @@ export function PostCard({
         </button>
 
         <button
+          onClick={() => setShowRepostDialog(true)}
+          className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors"
+        >
+          <Repeat className="w-5 h-5" />
+          <span className="text-white">Repost</span>
+        </button>
+
+        <button
           onClick={handleShare}
           className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors"
         >
@@ -318,6 +358,65 @@ export function PostCard({
           />
         </div>
       )}
+
+      {/* Repost Dialog */}
+      <Dialog open={showRepostDialog} onOpenChange={setShowRepostDialog}>
+        <DialogContent className="bg-gray-800 border-gray-700 text-white sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white">Repost</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Share this post with your followers
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Post Preview */}
+            <div className="bg-gray-700 rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <Avatar className="w-6 h-6">
+                  <AvatarImage src={post.users.avatar_url || ''} />
+                  <AvatarFallback className="bg-cyan-400 text-gray-900 text-xs">
+                    {post.users.display_name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-sm font-semibold text-white">{post.users.display_name}</span>
+              </div>
+              <p className="text-sm text-gray-300 line-clamp-2">{post.title}</p>
+            </div>
+
+            {/* Optional Comment */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300">Add a comment (optional)</label>
+              <Textarea
+                value={repostComment}
+                onChange={(e) => setRepostComment(e.target.value)}
+                placeholder="Share your thoughts..."
+                className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 min-h-[100px]"
+              />
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowRepostDialog(false)
+                  setRepostComment('')
+                }}
+                className="border-gray-600 text-gray-300 hover:bg-gray-700"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleRepost}
+                disabled={isReposting}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {isReposting ? 'Reposting...' : 'Repost'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Share Dialog */}
       <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
