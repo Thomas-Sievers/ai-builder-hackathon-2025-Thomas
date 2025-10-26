@@ -663,7 +663,18 @@ export async function createComment(postId: string, userId: string, content: str
   if (error) throw error
   
   // Update comments count
-  await supabase.rpc('increment_comments_count', { post_id: postId })
+  const { data: postData } = await supabase
+    .from('posts')
+    .select('comments_count')
+    .eq('id', postId)
+    .single()
+
+  if (postData) {
+    await supabase
+      .from('posts')
+      .update({ comments_count: (postData.comments_count || 0) + 1 })
+      .eq('id', postId)
+  }
   
   return data
 }
@@ -720,12 +731,36 @@ export async function updateComment(commentId: string, content: string) {
 }
 
 export async function deleteComment(commentId: string) {
+  // First get the comment to know which post to update
+  const { data: comment } = await supabase
+    .from('post_comments')
+    .select('post_id')
+    .eq('id', commentId)
+    .single()
+
+  // Delete the comment
   const { error } = await supabase
     .from('post_comments')
     .delete()
     .eq('id', commentId)
 
   if (error) throw error
+
+  // Update comments count
+  if (comment) {
+    const { data: postData } = await supabase
+      .from('posts')
+      .select('comments_count')
+      .eq('id', comment.post_id)
+      .single()
+
+    if (postData) {
+      await supabase
+        .from('posts')
+        .update({ comments_count: Math.max((postData.comments_count || 0) - 1, 0) })
+        .eq('id', comment.post_id)
+    }
+  }
 }
 
 export async function updatePost(postId: string, updates: {

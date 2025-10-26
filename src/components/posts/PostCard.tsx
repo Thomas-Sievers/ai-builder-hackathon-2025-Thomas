@@ -34,6 +34,7 @@ export function PostCard({
 }: PostCardProps) {
   const [isLiked, setIsLiked] = useState(false)
   const [likesCount, setLikesCount] = useState(post.likes_count)
+  const [commentsCount, setCommentsCount] = useState(post.comments_count)
   const [showComments, setShowComments] = useState(false)
   const [showFullContent, setShowFullContent] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -273,7 +274,7 @@ export function PostCard({
           className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors"
         >
           <MessageCircle className="w-5 h-5" />
-          <span className="text-white">{post.comments_count}</span>
+          <span className="text-white">{commentsCount}</span>
         </button>
 
         <button
@@ -292,7 +293,7 @@ export function PostCard({
             postId={post.id} 
             currentUserId={currentUserId}
             onCommentCountChange={(count) => {
-              // Update the comments count in the parent component if needed
+              setCommentsCount(count)
             }}
           />
         </div>
