@@ -13,7 +13,7 @@ import { ProfileCompletionIndicator } from '@/components/profile/ProfileCompleti
 import { PrivacySettings } from '@/components/profile/PrivacySettings'
 import { PostCard } from '@/components/posts/PostCard'
 import { supabase } from '@/lib/supabase'
-import { getPostsByUser } from '@/lib/database'
+import { getPostsByUser, deletePost } from '@/lib/database'
 import { Database } from '@/types/database'
 import { LogOut, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -263,8 +263,15 @@ export default function ProfilePage() {
                         setUserPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p))
                         fetchUserPosts()
                       }}
-                      onDelete={() => {
-                        fetchUserPosts()
+                      onDelete={async (postId) => {
+                        try {
+                          await deletePost(postId)
+                          toast.success('Post deleted successfully!')
+                          setUserPosts(prev => prev.filter(p => p.id !== postId))
+                        } catch (error) {
+                          console.error('Error deleting post:', error)
+                          toast.error('Failed to delete post')
+                        }
                       }}
                     />
                   ))}
