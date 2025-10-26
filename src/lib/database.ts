@@ -847,26 +847,35 @@ export async function repostPost(originalPostId: string, userId: string, comment
   // First, get the original post
   const { data: originalPost, error: fetchError } = await supabase
     .from('posts')
-    .select('*')
+    .select(`
+      *,
+      users (*)
+    `)
     .eq('id', originalPostId)
     .single()
 
   if (fetchError || !originalPost) {
+    console.error('Error fetching original post:', fetchError)
     throw new Error('Original post not found')
   }
 
-  // Create the repost
-  const { data, error } = await supabase
+  // Create a new post that's essentially a copy
+  const repostData: any = {
+    user_id: userId,
+    title: originalPost.title,
+    content: originalPost.content,
+    type: originalPost.type,
+    video_url: originalPost.video_url,
+    image_url: originalPost.image_url,
+    tags: originalPost.tags || [],
+    is_public: originalPost.is_public,
+  }
+
+  // Try to insert with repost metadata
+  let { data, error } = await supabase
     .from('posts')
     .insert({
-      user_id: userId,
-      title: originalPost.title,
-      content: originalPost.content,
-      type: originalPost.type,
-      video_url: originalPost.video_url,
-      image_url: originalPost.image_url,
-      tags: originalPost.tags,
-      is_public: originalPost.is_public,
+      ...repostData,
       original_post_id: originalPostId,
       is_repost: true,
       repost_comment: comment || null,
@@ -877,22 +886,29 @@ export async function repostPost(originalPostId: string, userId: string, comment
     `)
     .single()
 
-  if (error) throw error
-  
-  // Fetch the original post with user data
-  const { data: originalPostWithUser, error: fetchOriginalError } = await supabase
-    .from('posts')
-    .select(`
-      *,
-      users (*)
-    `)
-    .eq('id', originalPostId)
-    .single()
+  // If that fails (likely due to missing columns), try without repost metadata
+  if (error && (error.message?.includes('column') || error.code === '42703')) {
+    console.log('Repost columns don\'t exist, creating regular post instead...')
+    
+    const result = await supabase
+      .from('posts')
+      .insert(repostData)
+      .select('*, users (*)')
+      .single()
+    
+    data = result.data
+    error = result.error
+  }
+
+  if (error) {
+    console.error('Error creating repost:', error)
+    throw error
+  }
 
   // Add original post data to the repost
   return {
     ...data,
-    original_post: originalPostWithUser
+    original_post: originalPost
   }
 }
 
