@@ -12,19 +12,26 @@ import { GameProfilesSection } from '@/components/profile/GameProfilesSection'
 import { ProfileCompletionIndicator } from '@/components/profile/ProfileCompletionIndicator'
 import { HighlightReel } from '@/components/profile/HighlightReel'
 import { PrivacySettings } from '@/components/profile/PrivacySettings'
+import { PostCard } from '@/components/posts/PostCard'
 import { supabase } from '@/lib/supabase'
+import { getPostsByUser } from '@/lib/database'
 import { Database } from '@/types/database'
-import { LogOut } from 'lucide-react'
+import { LogOut, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 type User = Database['public']['Tables']['users']['Row']
 type UserProfile = Database['public']['Tables']['user_profiles']['Row']
+type Post = Database['public']['Tables']['posts']['Row'] & {
+  users: Database['public']['Tables']['users']['Row']
+}
 
 export default function ProfilePage() {
   const { user, loading, signOut } = useAuth()
   const router = useRouter()
   const [profile, setProfile] = useState<User | null>(null)
   const [gameProfiles, setGameProfiles] = useState<UserProfile[]>([])
+  const [userPosts, setUserPosts] = useState<Post[]>([])
+  const [loadingPosts, setLoadingPosts] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [loadingProfile, setLoadingProfile] = useState(true)
 
@@ -87,6 +94,26 @@ export default function ProfilePage() {
       setLoadingProfile(false)
     }
   }
+
+  const fetchUserPosts = async () => {
+    if (!user) return
+
+    try {
+      setLoadingPosts(true)
+      const posts = await getPostsByUser(user.id)
+      setUserPosts(posts)
+    } catch (error) {
+      console.error('Error fetching user posts:', error)
+    } finally {
+      setLoadingPosts(false)
+    }
+  }
+
+  useEffect(() => {
+    if (user && !isEditing) {
+      fetchUserPosts()
+    }
+  }, [user, isEditing])
 
   const handleProfileUpdate = async (updatedProfile: Partial<User>) => {
     if (!user) return
@@ -212,6 +239,45 @@ export default function ProfilePage() {
               profile={profile}
               onUpdate={handleProfileUpdate}
             />
+          )}
+
+          {/* User's Posts */}
+          {!isEditing && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-blue-400">My Posts</h2>
+                <span className="text-gray-400 text-sm">
+                  {userPosts.length} {userPosts.length === 1 ? 'post' : 'posts'}
+                </span>
+              </div>
+
+              {loadingPosts ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
+                </div>
+              ) : userPosts.length === 0 ? (
+                <Card className="bg-gray-800 border-gray-700 p-8 text-center">
+                  <p className="text-gray-400">You haven't made any posts yet.</p>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  {userPosts.map((post) => (
+                    <PostCard
+                      key={post.id}
+                      post={post}
+                      currentUserId={user.id}
+                      onEdit={(updatedPost) => {
+                        setUserPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p))
+                        fetchUserPosts()
+                      }}
+                      onDelete={() => {
+                        fetchUserPosts()
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
