@@ -141,15 +141,18 @@ export async function getPosts(limit = 20, offset = 0) {
   if (error) throw error
   
   // Fetch original posts for reposts
+  // Check original_post_id field to detect reposts
   const postsWithOriginal = await Promise.all(
     (data || []).map(async (post) => {
-      if (post.is_repost && post.original_post_id) {
+      if (post.original_post_id) {
         const { data: originalPost } = await supabase
           .from('posts')
           .select('*, users (*)')
           .eq('id', post.original_post_id)
           .single()
-        return { ...post, original_post: originalPost }
+        if (originalPost) {
+          return { ...post, original_post: originalPost, is_repost: true }
+        }
       }
       return post
     })
@@ -198,15 +201,18 @@ export async function getPostsWithFilters(filters?: {
   }
   
   // Fetch original posts for reposts
+  // Check original_post_id field to detect reposts
   const postsWithOriginal = await Promise.all(
     (data || []).map(async (post) => {
-      if (post.is_repost && post.original_post_id) {
+      if (post.original_post_id) {
         const { data: originalPost } = await supabase
           .from('posts')
           .select('*, users (*)')
           .eq('id', post.original_post_id)
           .single()
-        return { ...post, original_post: originalPost }
+        if (originalPost) {
+          return { ...post, original_post: originalPost, is_repost: true }
+        }
       }
       return post
     })
@@ -229,15 +235,18 @@ export async function getPostsByUser(userId: string, limit = 20, offset = 0) {
   if (error) throw error
   
   // Fetch original posts for reposts
+  // Check original_post_id field to detect reposts
   const postsWithOriginal = await Promise.all(
     (data || []).map(async (post) => {
-      if (post.is_repost && post.original_post_id) {
+      if (post.original_post_id) {
         const { data: originalPost } = await supabase
           .from('posts')
           .select('*, users (*)')
           .eq('id', post.original_post_id)
           .single()
-        return { ...post, original_post: originalPost }
+        if (originalPost) {
+          return { ...post, original_post: originalPost, is_repost: true }
+        }
       }
       return post
     })
@@ -905,10 +914,13 @@ export async function repostPost(originalPostId: string, userId: string, comment
     throw error
   }
 
-  // Add original post data to the repost
+  // Always add original post data to the repost
+  // Even if database columns don't exist, attach the original post data
   return {
     ...data,
-    original_post: originalPost
+    original_post: originalPost,
+    is_repost: true, // Mark as repost even if column doesn't exist
+    original_post_id: originalPostId // Attach ID even if column doesn't exist
   }
 }
 

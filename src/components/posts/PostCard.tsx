@@ -163,8 +163,8 @@ export function PostCard({
     }
   }
 
-  const isRepost = post.is_repost && !!post.original_post
-  const displayPost = isRepost ? post.original_post! : post
+  const isRepost = (post.is_repost && !!post.original_post) || (post.original_post_id && !!post.original_post)
+  const displayPost = isRepost && post.original_post ? post.original_post : post
 
   // If it's a repost, render a nested card design
   if (isRepost && post.original_post) {
