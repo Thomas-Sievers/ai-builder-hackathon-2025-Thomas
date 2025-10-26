@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import { Database } from '@/types/database'
 import { formatDistanceToNow } from 'date-fns'
 import { toast } from 'sonner'
-import { Heart, MessageCircle, Share2, MoreHorizontal, Edit, Trash2, Eye, EyeOff } from 'lucide-react'
+import { Heart, MessageCircle, Share2, MoreHorizontal, Edit, Trash2, Eye, EyeOff, Copy, Check } from 'lucide-react'
 import { likePost, unlikePost, isPostLiked } from '@/lib/database'
 import { Comments } from './Comments'
 
@@ -37,6 +39,8 @@ export function PostCard({
   const [commentsCount, setCommentsCount] = useState(post.comments_count)
   const [showComments, setShowComments] = useState(false)
   const [showFullContent, setShowFullContent] = useState(false)
+  const [showShareDialog, setShowShareDialog] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [loading, setLoading] = useState(false)
 
   const isOwner = currentUserId === post.user_id
@@ -77,18 +81,34 @@ export function PostCard({
     }
   }
 
+  const postUrl = typeof window !== 'undefined' ? `${window.location.origin}/posts/${post.id}` : ''
+
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
         title: post.title,
         text: post.content || '',
-        url: window.location.href,
+        url: postUrl,
+      }).catch(() => {
+        // If share fails, open the dialog instead
+        setShowShareDialog(true)
       })
     } else {
-      navigator.clipboard.writeText(window.location.href)
-      toast.success('Link copied to clipboard!')
+      setShowShareDialog(true)
     }
     onShare?.(post)
+  }
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(postUrl)
+      setCopied(true)
+      toast.success('Link copied to clipboard!')
+      setTimeout(() => setCopied(false), 2000)
+    } catch (error) {
+      console.error('Failed to copy:', error)
+      toast.error('Failed to copy link')
+    }
   }
 
   const getVideoEmbedUrl = (url: string) => {
@@ -298,6 +318,60 @@ export function PostCard({
           />
         </div>
       )}
+
+      {/* Share Dialog */}
+      <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
+        <DialogContent className="bg-gray-800 border-gray-700 text-white sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white">Share Post</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Share this post with others
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300">Post Link</label>
+              <div className="flex gap-2">
+                <Input
+                  value={postUrl}
+                  readOnly
+                  className="bg-gray-700 border-gray-600 text-white"
+                />
+                <Button
+                  onClick={handleCopyLink}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="w-4 h-4 mr-2" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copy
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <div className="bg-gray-700 rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <Avatar className="w-6 h-6">
+                  <AvatarImage src={post.users.avatar_url || ''} />
+                  <AvatarFallback className="bg-cyan-400 text-gray-900 text-xs">
+                    {post.users.display_name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-sm font-semibold text-white">{post.users.display_name}</span>
+              </div>
+              <p className="text-sm text-gray-300 line-clamp-2">{post.title}</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }
