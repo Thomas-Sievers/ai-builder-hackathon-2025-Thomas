@@ -562,6 +562,12 @@ export async function getConnectionCounts(userId: string) {
 
 // Post interaction operations
 export async function likePost(postId: string, userId: string) {
+  // First, check if already liked to prevent duplicates
+  const alreadyLiked = await isPostLiked(postId, userId)
+  if (alreadyLiked) {
+    return null
+  }
+
   const { data, error } = await supabase
     .from('post_likes')
     .insert({
@@ -574,7 +580,18 @@ export async function likePost(postId: string, userId: string) {
   if (error) throw error
   
   // Update likes count
-  await supabase.rpc('increment_likes_count', { post_id: postId })
+  const { data: postData } = await supabase
+    .from('posts')
+    .select('likes_count')
+    .eq('id', postId)
+    .single()
+
+  if (postData) {
+    await supabase
+      .from('posts')
+      .update({ likes_count: (postData.likes_count || 0) + 1 })
+      .eq('id', postId)
+  }
   
   return data
 }
@@ -589,7 +606,18 @@ export async function unlikePost(postId: string, userId: string) {
   if (error) throw error
   
   // Update likes count
-  await supabase.rpc('decrement_likes_count', { post_id: postId })
+  const { data: postData } = await supabase
+    .from('posts')
+    .select('likes_count')
+    .eq('id', postId)
+    .single()
+
+  if (postData) {
+    await supabase
+      .from('posts')
+      .update({ likes_count: Math.max((postData.likes_count || 0) - 1, 0) })
+      .eq('id', postId)
+  }
 }
 
 export async function getPostLikes(postId: string) {
