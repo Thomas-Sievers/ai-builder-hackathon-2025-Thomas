@@ -58,6 +58,15 @@ export function PostEditForm({ post, onPostUpdated, onCancel }: PostEditFormProp
       return
     }
 
+    // Validate image URL format
+    if (post.type === 'image' && imageUrl.trim()) {
+      const imageUrlPattern = /\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i
+      if (!imageUrlPattern.test(imageUrl.trim())) {
+        toast.error('Please enter a direct image URL (ending with .jpg, .png, .gif, etc.)')
+        return
+      }
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -70,14 +79,24 @@ export function PostEditForm({ post, onPostUpdated, onCancel }: PostEditFormProp
         is_public: isPublic,
       }
 
+      console.log('PostEditForm: Starting update with data:', updateData)
+      console.log('PostEditForm: Post ID:', post.id)
+      
       const updatedPost = await updatePost(post.id, updateData)
       
+      console.log('PostEditForm: Update successful, result:', updatedPost)
       toast.success('Post updated successfully!')
       onPostUpdated?.(updatedPost)
     } catch (error) {
-      console.error('Error updating post:', error)
+      console.error('PostEditForm: Error updating post:', error)
+      console.error('PostEditForm: Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        error: error
+      })
       toast.error('Failed to update post. Please try again.')
     } finally {
+      console.log('PostEditForm: Setting isSubmitting to false')
       setIsSubmitting(false)
     }
   }

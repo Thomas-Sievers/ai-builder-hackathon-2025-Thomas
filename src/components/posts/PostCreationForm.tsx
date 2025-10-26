@@ -37,7 +37,11 @@ export function PostCreationForm({ onPostCreated, onCancel }: PostCreationFormPr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    console.log('PostCreationForm: User state:', user)
+    console.log('PostCreationForm: User ID:', user?.id)
+    
     if (!user) {
+      console.log('PostCreationForm: No user found')
       toast.error('You must be logged in to create a post')
       return
     }
@@ -48,6 +52,9 @@ export function PostCreationForm({ onPostCreated, onCancel }: PostCreationFormPr
     }
 
     if (postType === 'text' && !content.trim()) {
+      console.log('Text post validation failed - no content')
+      console.log('Content value:', content)
+      console.log('Content trimmed:', content.trim())
       toast.error('Please enter some content')
       return
     }
@@ -60,6 +67,15 @@ export function PostCreationForm({ onPostCreated, onCancel }: PostCreationFormPr
     if (postType === 'image' && !imageUrl.trim()) {
       toast.error('Please enter an image URL')
       return
+    }
+
+    // Validate image URL format
+    if (postType === 'image' && imageUrl.trim()) {
+      const imageUrlPattern = /\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i
+      if (!imageUrlPattern.test(imageUrl.trim())) {
+        toast.error('Please enter a direct image URL (ending with .jpg, .png, .gif, etc.)')
+        return
+      }
     }
 
     setIsSubmitting(true)
@@ -75,7 +91,11 @@ export function PostCreationForm({ onPostCreated, onCancel }: PostCreationFormPr
         is_public: isPublic,
       }
 
-      await createPost(postData, user.id)
+      console.log('PostCreationForm: Creating post with data:', postData)
+      console.log('PostCreationForm: User ID for post creation:', user.id)
+      
+      const result = await createPost(postData, user.id)
+      console.log('PostCreationForm: Post creation result:', result)
       
       toast.success('Post created successfully!')
       

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { getChampionshipById } from '@/lib/database'
-import { Loader2, Trophy, Calendar, MapPin, Users, DollarSign, Globe, ArrowLeft, Heart, Share2 } from 'lucide-react'
+import { Loader2, Trophy, Calendar, MapPin, DollarSign, Globe, ArrowLeft, Heart, Share2 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 
@@ -255,15 +255,14 @@ export default function ChampionshipDetailPage() {
                   Share
                 </Button>
                 {user && championship.created_by === user.id && (
-                  <Button
-                    variant="outline"
-                    className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                    asChild
-                  >
-                    <Link href={`/championships/${championship.id}/edit`}>
+                  <Link href={`/championships/${championship.id}/edit`}>
+                    <Button
+                      variant="outline"
+                      className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                    >
                       Edit Championship
-                    </Link>
-                  </Button>
+                    </Button>
+                  </Link>
                 )}
               </div>
             </CardContent>

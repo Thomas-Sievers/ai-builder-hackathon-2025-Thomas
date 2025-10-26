@@ -37,6 +37,7 @@ export function PostFeed({ currentUserId, showCreateButton = true, filters, sear
 
   const loadPosts = async (reset = false) => {
     try {
+      console.log('PostFeed: Loading posts, reset:', reset)
       if (reset) {
         setLoading(true)
         setOffset(0)
@@ -53,6 +54,8 @@ export function PostFeed({ currentUserId, showCreateButton = true, filters, sear
       }
       
       const newPosts = await getPostsWithFilters(filterOptions)
+      console.log('PostFeed: Loaded posts:', newPosts.length)
+      console.log('PostFeed: Posts data:', newPosts)
       
       if (reset) {
         setPosts(newPosts)

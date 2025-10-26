@@ -164,12 +164,12 @@ export function PostFeedWithFilters({ currentUserId, showCreateButton }: PostFee
       {/* Create Post Button */}
       {showCreateButton && (
         <div className="flex justify-center">
-          <Button asChild className="bg-blue-600 hover:bg-blue-700">
-            <Link href="/posts/create">
+          <Link href="/posts/create">
+            <Button className="bg-blue-600 hover:bg-blue-700">
               <Plus className="w-4 h-4 mr-2" />
               Create Post
-            </Link>
-          </Button>
+            </Button>
+          </Link>
         </div>
       )}
 

@@ -98,6 +98,28 @@ export async function createPost(postData: {
   if (!userId) {
     throw new Error('User ID is required')
   }
+
+  // Check if user is authenticated
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+  console.log('Session check:', { session: !!session, sessionError })
+  
+  if (sessionError) {
+    console.error('Session error:', sessionError)
+    throw new Error('Authentication error: ' + sessionError.message)
+  }
+  
+  if (!session) {
+    console.error('No active session found')
+    throw new Error('You must be logged in to create a post')
+  }
+  
+  console.log('Session user ID:', session.user.id)
+  console.log('Expected user ID:', userId)
+  
+  if (session.user.id !== userId) {
+    console.error('User ID mismatch')
+    throw new Error('User ID mismatch')
+  }
   
   const { data, error } = await supabase
     .from('posts')
@@ -110,7 +132,6 @@ export async function createPost(postData: {
       image_url: postData.image_url,
       tags: postData.tags || [],
       is_public: postData.is_public ?? true,
-      is_repost: false,
     })
     .select(`
       *,
@@ -122,8 +143,16 @@ export async function createPost(postData: {
   
   if (error) {
     console.error('Supabase error:', error)
+    console.error('Error details:', JSON.stringify(error, null, 2))
     throw error
   }
+  
+  if (!data) {
+    console.error('No data returned from post creation')
+    throw new Error('No data returned from post creation')
+  }
+  
+  console.log('Post created successfully:', data.id)
   return data
 }
 
@@ -389,7 +418,27 @@ export async function getChampionshipById(id: string) {
 }
 
 export async function updateChampionship(id: string, championshipData: Tables['championships']['Update']) {
-  const { data, error } = await supabase
+  console.log('Updating championship with ID:', id)
+  console.log('Championship data:', championshipData)
+
+  // Check if user is authenticated
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+  console.log('Update championship session check:', { session: !!session, sessionError })
+  
+  if (sessionError) {
+    console.error('Session error:', sessionError)
+    throw new Error('Authentication error: ' + sessionError.message)
+  }
+  
+  if (!session) {
+    console.error('No active session found for championship update')
+    throw new Error('You must be logged in to update a championship')
+  }
+  
+  console.log('Update championship session user ID:', session.user.id)
+
+  // Add timeout to prevent hanging
+  const updatePromise = supabase
     .from('championships')
     .update(championshipData)
     .eq('id', id)
@@ -399,7 +448,26 @@ export async function updateChampionship(id: string, championshipData: Tables['c
     `)
     .single()
 
-  if (error) throw error
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error('Championship update request timed out')), 10000) // 10 second timeout
+  })
+
+  const { data, error } = await Promise.race([updatePromise, timeoutPromise]) as any
+
+  console.log('Update championship result:', { data, error })
+  
+  if (error) {
+    console.error('Championship update error:', error)
+    console.error('Championship update error details:', JSON.stringify(error, null, 2))
+    throw error
+  }
+  
+  if (!data) {
+    console.error('No data returned from championship update')
+    throw new Error('No data returned from championship update')
+  }
+  
+  console.log('Championship updated successfully:', data.id)
   return data
 }
 
@@ -880,7 +948,27 @@ export async function updatePost(postId: string, updates: {
   tags?: string[]
   is_public?: boolean
 }) {
-  const { data, error } = await supabase
+  console.log('Updating post with ID:', postId)
+  console.log('Updates:', updates)
+
+  // Check if user is authenticated
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+  console.log('Update session check:', { session: !!session, sessionError })
+  
+  if (sessionError) {
+    console.error('Session error:', sessionError)
+    throw new Error('Authentication error: ' + sessionError.message)
+  }
+  
+  if (!session) {
+    console.error('No active session found for update')
+    throw new Error('You must be logged in to update a post')
+  }
+  
+  console.log('Update session user ID:', session.user.id)
+
+  // Add timeout to prevent hanging
+  const updatePromise = supabase
     .from('posts')
     .update(updates)
     .eq('id', postId)
@@ -890,7 +978,26 @@ export async function updatePost(postId: string, updates: {
     `)
     .single()
 
-  if (error) throw error
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error('Update request timed out')), 10000) // 10 second timeout
+  })
+
+  const { data, error } = await Promise.race([updatePromise, timeoutPromise]) as any
+
+  console.log('Update post result:', { data, error })
+  
+  if (error) {
+    console.error('Update error:', error)
+    console.error('Update error details:', JSON.stringify(error, null, 2))
+    throw error
+  }
+  
+  if (!data) {
+    console.error('No data returned from post update')
+    throw new Error('No data returned from post update')
+  }
+  
+  console.log('Post updated successfully:', data.id)
   return data
 }
 
@@ -931,46 +1038,26 @@ export async function repostPost(originalPostId: string, userId: string, comment
     is_public: originalPost.is_public,
   }
 
-  // Try to insert with repost metadata
-  let { data, error } = await supabase
-    .from('posts')
-    .insert({
-      ...repostData,
-      original_post_id: originalPostId,
-      is_repost: true,
-      repost_comment: comment || null,
-    })
-    .select(`
-      *,
-      users (*)
-    `)
-    .single()
-
-  // If that fails (likely due to missing columns), store repost ID and comment in tags
-  if (error && (error.message?.includes('column') || error.code === '42703')) {
-    console.log('Repost columns don\'t exist, storing repost metadata in tags...')
-    
-    // Add original post ID and comment to tags so we can detect reposts later
-    const metadataTags = [`__repost:${originalPostId}__`]
-    if (comment && comment.trim()) {
-      // Encode comment to avoid issues with special characters
-      metadataTags.push(`__repost_comment:${encodeURIComponent(comment.trim())}__`)
-    }
-    
-    repostData.tags = [
-      ...(repostData.tags || []),
-      ...metadataTags
-    ]
-    
-    const result = await supabase
-      .from('posts')
-      .insert(repostData)
-      .select('*, users (*)')
-      .single()
-    
-    data = result.data
-    error = result.error
+  // Store repost metadata in tags since columns don't exist
+  console.log('Storing repost metadata in tags...')
+  
+  // Add original post ID and comment to tags so we can detect reposts later
+  const metadataTags = [`__repost:${originalPostId}__`]
+  if (comment && comment.trim()) {
+    // Encode comment to avoid issues with special characters
+    metadataTags.push(`__repost_comment:${encodeURIComponent(comment.trim())}__`)
   }
+  
+  repostData.tags = [
+    ...(repostData.tags || []),
+    ...metadataTags
+  ]
+  
+  const { data, error } = await supabase
+    .from('posts')
+    .insert(repostData)
+    .select('*, users (*)')
+    .single()
 
   if (error) {
     console.error('Error creating repost:', error)

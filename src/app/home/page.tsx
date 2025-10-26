@@ -57,8 +57,12 @@ export default function HomePage() {
               ) : (
                 <PostCreationForm
                   onPostCreated={() => {
+                    console.log('Home: Post created, refreshing feed')
                     setShowCreateForm(false)
-                    setRefreshKey(prev => prev + 1) // Trigger refresh of PostFeed
+                    setRefreshKey(prev => {
+                      console.log('Home: Refresh key changing from', prev, 'to', prev + 1)
+                      return prev + 1
+                    })
                   }}
                   onCancel={() => setShowCreateForm(false)}
                 />

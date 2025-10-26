@@ -142,12 +142,21 @@ export default function EditChampionshipPage() {
         website: formData.website.trim() || null,
       }
 
-      await updateChampionship(params.id as string, championshipData)
+      console.log('ChampionshipEditForm: Starting update with data:', championshipData)
+      console.log('ChampionshipEditForm: Championship ID:', params.id)
       
+      const updatedChampionship = await updateChampionship(params.id as string, championshipData)
+      
+      console.log('ChampionshipEditForm: Update successful, result:', updatedChampionship)
       toast.success('Championship updated successfully!')
       router.push(`/championships/${params.id}`)
     } catch (error) {
-      console.error('Error updating championship:', error)
+      console.error('ChampionshipEditForm: Error updating championship:', error)
+      console.error('ChampionshipEditForm: Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        error: error
+      })
       
       let errorMessage = 'Failed to update championship. Please try again.'
       if (error instanceof Error) {

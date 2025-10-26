@@ -134,6 +134,22 @@ export default function ChampionshipsPage() {
       <NavBar />
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-3xl font-bold text-white">Championships</h1>
+              <p className="text-gray-400 mt-1">Discover and join esports championships</p>
+            </div>
+            {user && (
+              <Link href="/championships/create">
+                <Button className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Championship
+                </Button>
+              </Link>
+            )}
+          </div>
+
           {/* Filters */}
           <Card className="bg-gray-800 border-gray-700 mb-6">
             <CardHeader>
@@ -213,13 +229,19 @@ export default function ChampionshipsPage() {
                 <Trophy className="w-16 h-16 mx-auto mb-4 text-gray-600" />
                 <h3 className="text-xl font-semibold text-gray-300 mb-2">No Championships Found</h3>
                 <p className="text-gray-500">Try adjusting your filters or create a new championship.</p>
-                {user && (
-                  <Button className="mt-4 bg-blue-600 hover:bg-blue-700" asChild>
-                    <Link href="/championships/create">
+                {user ? (
+                  <Link href="/championships/create">
+                    <Button className="mt-4 bg-blue-600 hover:bg-blue-700">
                       <Plus className="w-4 h-4 mr-2" />
                       Create Championship
-                    </Link>
-                  </Button>
+                    </Button>
+                  </Link>
+                ) : (
+                  <p className="text-sm text-gray-400 mt-4">
+                    <Link href="/auth/signin" className="text-blue-400 hover:text-blue-300">
+                      Sign in
+                    </Link> to create a championship
+                  </p>
                 )}
               </CardContent>
             </Card>
@@ -277,11 +299,12 @@ export default function ChampionshipsPage() {
                       <Button 
                         variant="outline" 
                         className="w-full mt-4 border-gray-600 text-gray-300 hover:bg-gray-700"
-                        asChild
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          window.open(champ.website, '_blank', 'noopener,noreferrer')
+                        }}
                       >
-                        <a href={champ.website} target="_blank" rel="noopener noreferrer">
-                          Visit Website
-                        </a>
+                        Visit Website
                       </Button>
                     )}
                   </CardContent>
