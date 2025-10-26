@@ -166,39 +166,180 @@ export function PostCard({
   const isRepost = post.is_repost && !!post.original_post
   const displayPost = isRepost ? post.original_post! : post
 
-  return (
-    <Card className="bg-gray-800 border-gray-700 p-4 hover:border-gray-600 transition-colors mb-4">
-      {/* Repost indicator */}
-      {isRepost && (
-        <div className="flex items-center gap-2 mb-3 text-gray-400 text-sm">
-          <Repeat className="w-4 h-4" />
-          <span>{post.users.display_name} reposted</span>
-          {post.repost_comment && (
-            <div className="mt-2 p-2 bg-gray-700 rounded text-gray-200">{post.repost_comment}</div>
+  // If it's a repost, render a nested card design
+  if (isRepost && post.original_post) {
+    return (
+      <Card className="bg-gray-800 border-gray-700 border-l-4 border-l-cyan-400 p-4 hover:border-gray-600 transition-colors mb-4">
+        {/* Repost Header - Shows who reposted */}
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Repeat className="w-4 h-4 text-cyan-400" />
+            <div className="flex items-center gap-2">
+              <Avatar className="w-6 h-6">
+                <AvatarImage src={post.users.avatar_url || ''} />
+                <AvatarFallback className="bg-cyan-400 text-gray-900 text-xs">
+                  {post.users.display_name.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <span className="text-sm font-medium text-cyan-400">{post.users.display_name}</span>
+                <span className="text-xs text-gray-400 ml-2">
+                  reposted • {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Actions Menu for the repost */}
+          {isOwner && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-gray-700 border-gray-600">
+                <DropdownMenuItem 
+                  onClick={() => onDelete?.(post.id)}
+                  className="text-red-400 hover:bg-gray-600"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Repost
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
-      )}
 
+        {/* Repost Comment if exists */}
+        {post.repost_comment && (
+          <div className="mb-3 p-3 bg-gray-700/50 rounded-lg">
+            <p className="text-gray-300 text-sm">{post.repost_comment}</p>
+          </div>
+        )}
+
+        {/* Nested Card - Shows Original Post */}
+        <Card className="bg-gray-900/50 border-gray-700 p-4">
+          {/* Original Post Header */}
+          <div className="flex items-center gap-3 mb-3 pb-3 border-b border-gray-700">
+            <Avatar className="w-8 h-8">
+              <AvatarImage src={post.original_post.users.avatar_url || ''} />
+              <AvatarFallback className="bg-blue-400 text-gray-900">
+                {post.original_post.users.display_name.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="font-semibold text-white text-sm">{post.original_post.users.display_name}</h4>
+                {post.original_post.users.is_verified && (
+                  <Badge variant="secondary" className="bg-cyan-400/20 text-cyan-300 text-xs">
+                    Verified
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-gray-400">
+                @{post.original_post.users.username} • {formatDistanceToNow(new Date(post.original_post.created_at), { addSuffix: true })}
+              </p>
+            </div>
+          </div>
+
+          {/* Original Post Content */}
+          <div className="mb-3">
+            <h2 className="text-base font-semibold text-white mb-2">{displayPost.title}</h2>
+        
+        {displayPost.type === 'text' && displayPost.content && (
+          <div className="text-gray-300 whitespace-pre-wrap">
+            {displayPost.content}
+          </div>
+        )}
+
+        {displayPost.type === 'video' && displayPost.video_url && (
+          <div className="mt-4">
+            <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+              <iframe
+                src={getVideoEmbedUrl(displayPost.video_url)}
+                className="absolute top-0 left-0 w-full h-full rounded-lg"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                onError={(e) => {
+                  console.error('Video iframe failed to load:', e)
+                  toast.error('Failed to load video. Please check the URL.')
+                }}
+                onLoad={() => {
+                  console.log('Video loaded successfully')
+                }}
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Video URL: {displayPost.video_url}
+            </p>
+          </div>
+        )}
+
+        {displayPost.type === 'image' && displayPost.image_url && (
+          <div className="mt-4">
+            <img
+              src={displayPost.image_url}
+              alt={displayPost.title}
+              className="w-full max-w-md rounded-lg"
+              onError={(e) => {
+                console.error('Image failed to load:', e)
+                toast.error('Failed to load image. Please check the URL.')
+              }}
+              onLoad={() => {
+                console.log('Image loaded successfully')
+              }}
+            />
+            <p className="text-xs text-gray-500 mt-2">
+              Image URL: {displayPost.image_url}
+            </p>
+          </div>
+            )}
+          </div>
+
+          {/* Tags */}
+          {displayPost.tags && displayPost.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {displayPost.tags.map((tag) => (
+                <Badge
+                  key={tag}
+                  variant="secondary"
+                  className="bg-cyan-400/20 text-cyan-300 border-cyan-400/30 text-xs"
+                >
+                  #{tag}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </Card>
+      </Card>
+    )
+  }
+
+  // Regular post rendering
+  return (
+    <Card className="bg-gray-800 border-gray-700 p-4 hover:border-gray-600 transition-colors mb-4">
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
           <Avatar className="w-10 h-10">
-            <AvatarImage src={(isRepost && post.original_post?.users ? post.original_post.users : post.users).avatar_url || ''} />
+            <AvatarImage src={post.users.avatar_url || ''} />
             <AvatarFallback className="bg-cyan-400 text-gray-900">
-              {(isRepost && post.original_post?.users ? post.original_post.users : post.users).display_name.charAt(0).toUpperCase()}
+              {post.users.display_name.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-white">{(isRepost && post.original_post?.users ? post.original_post.users : post.users).display_name}</h3>
-              {(isRepost && post.original_post?.users ? post.original_post.users : post.users).is_verified && (
+              <h3 className="font-semibold text-white">{post.users.display_name}</h3>
+              {post.users.is_verified && (
                 <Badge variant="secondary" className="bg-cyan-400/20 text-cyan-300 text-xs">
                   Verified
                 </Badge>
               )}
             </div>
             <p className="text-sm text-gray-400">
-              @{(isRepost && post.original_post?.users ? post.original_post.users : post.users).username} • {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+              @{post.users.username} • {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
             </p>
           </div>
         </div>
