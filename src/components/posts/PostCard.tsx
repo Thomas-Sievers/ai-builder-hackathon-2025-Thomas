@@ -166,8 +166,8 @@ export function PostCard({
   const isRepost = (post.is_repost && !!post.original_post) || (post.original_post_id && !!post.original_post)
   const displayPost = isRepost && post.original_post ? post.original_post : post
 
-  // Filter out __repost:ID__ metadata tags from display
-  const displayTags = post.tags?.filter((tag: string) => !tag.startsWith('__repost:')) || []
+  // Filter out metadata tags from display (__repost:ID__ and __repost_comment:comment__)
+  const displayTags = post.tags?.filter((tag: string) => !tag.startsWith('__repost')) || []
 
   // If it's a repost, render a nested card design
   if (isRepost && post.original_post) {
@@ -216,8 +216,12 @@ export function PostCard({
 
         {/* Repost Comment if exists */}
         {post.repost_comment && (
-          <div className="mb-3 p-3 bg-gray-700/50 rounded-lg">
-            <p className="text-gray-300 text-sm">{post.repost_comment}</p>
+          <div className="mb-3 p-4 bg-gradient-to-r from-cyan-400/10 to-blue-400/10 border-l-4 border-cyan-400 rounded-lg">
+            <div className="flex items-start gap-2">
+              <span className="text-cyan-400 font-semibold text-lg leading-none">"</span>
+              <p className="text-gray-200 text-sm italic flex-1">{post.repost_comment}</p>
+              <span className="text-cyan-400 font-semibold text-lg leading-none">"</span>
+            </div>
           </div>
         )}
 

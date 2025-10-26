@@ -145,12 +145,19 @@ export async function getPosts(limit = 20, offset = 0) {
   const postsWithOriginal = await Promise.all(
     (data || []).map(async (post) => {
       let originalPostId = post.original_post_id
+      let repostComment = post.repost_comment
       
       // If no original_post_id, check tags for __repost:ID__ format
       if (!originalPostId && post.tags) {
-        const repostTag = post.tags.find((tag: string) => tag.startsWith('__repost:'))
+        const repostTag = post.tags.find((tag: string) => tag.startsWith('__repost:') && !tag.startsWith('__repost_comment:'))
         if (repostTag) {
           originalPostId = repostTag.replace('__repost:', '').replace('__', '')
+        }
+        
+        // Extract repost comment from tags if it exists
+        const commentTag = post.tags.find((tag: string) => tag.startsWith('__repost_comment:'))
+        if (commentTag) {
+          repostComment = decodeURIComponent(commentTag.replace('__repost_comment:', '').replace('__', ''))
         }
       }
       
@@ -161,7 +168,7 @@ export async function getPosts(limit = 20, offset = 0) {
           .eq('id', originalPostId)
           .single()
         if (originalPost) {
-          return { ...post, original_post: originalPost, is_repost: true }
+          return { ...post, original_post: originalPost, is_repost: true, repost_comment: repostComment }
         }
       }
       return post
@@ -215,12 +222,19 @@ export async function getPostsWithFilters(filters?: {
   const postsWithOriginal = await Promise.all(
     (data || []).map(async (post) => {
       let originalPostId = post.original_post_id
+      let repostComment = post.repost_comment
       
       // If no original_post_id, check tags for __repost:ID__ format
       if (!originalPostId && post.tags) {
-        const repostTag = post.tags.find((tag: string) => tag.startsWith('__repost:'))
+        const repostTag = post.tags.find((tag: string) => tag.startsWith('__repost:') && !tag.startsWith('__repost_comment:'))
         if (repostTag) {
           originalPostId = repostTag.replace('__repost:', '').replace('__', '')
+        }
+        
+        // Extract repost comment from tags if it exists
+        const commentTag = post.tags.find((tag: string) => tag.startsWith('__repost_comment:'))
+        if (commentTag) {
+          repostComment = decodeURIComponent(commentTag.replace('__repost_comment:', '').replace('__', ''))
         }
       }
       
@@ -231,7 +245,7 @@ export async function getPostsWithFilters(filters?: {
           .eq('id', originalPostId)
           .single()
         if (originalPost) {
-          return { ...post, original_post: originalPost, is_repost: true }
+          return { ...post, original_post: originalPost, is_repost: true, repost_comment: repostComment }
         }
       }
       return post
@@ -259,12 +273,19 @@ export async function getPostsByUser(userId: string, limit = 20, offset = 0) {
   const postsWithOriginal = await Promise.all(
     (data || []).map(async (post) => {
       let originalPostId = post.original_post_id
+      let repostComment = post.repost_comment
       
       // If no original_post_id, check tags for __repost:ID__ format
       if (!originalPostId && post.tags) {
-        const repostTag = post.tags.find((tag: string) => tag.startsWith('__repost:'))
+        const repostTag = post.tags.find((tag: string) => tag.startsWith('__repost:') && !tag.startsWith('__repost_comment:'))
         if (repostTag) {
           originalPostId = repostTag.replace('__repost:', '').replace('__', '')
+        }
+        
+        // Extract repost comment from tags if it exists
+        const commentTag = post.tags.find((tag: string) => tag.startsWith('__repost_comment:'))
+        if (commentTag) {
+          repostComment = decodeURIComponent(commentTag.replace('__repost_comment:', '').replace('__', ''))
         }
       }
       
@@ -275,7 +296,7 @@ export async function getPostsByUser(userId: string, limit = 20, offset = 0) {
           .eq('id', originalPostId)
           .single()
         if (originalPost) {
-          return { ...post, original_post: originalPost, is_repost: true }
+          return { ...post, original_post: originalPost, is_repost: true, repost_comment: repostComment }
         }
       }
       return post
@@ -925,14 +946,20 @@ export async function repostPost(originalPostId: string, userId: string, comment
     `)
     .single()
 
-  // If that fails (likely due to missing columns), store repost ID in tags
+  // If that fails (likely due to missing columns), store repost ID and comment in tags
   if (error && (error.message?.includes('column') || error.code === '42703')) {
     console.log('Repost columns don\'t exist, storing repost metadata in tags...')
     
-    // Add original post ID to tags so we can detect reposts later
+    // Add original post ID and comment to tags so we can detect reposts later
+    const metadataTags = [`__repost:${originalPostId}__`]
+    if (comment && comment.trim()) {
+      // Encode comment to avoid issues with special characters
+      metadataTags.push(`__repost_comment:${encodeURIComponent(comment.trim())}__`)
+    }
+    
     repostData.tags = [
       ...(repostData.tags || []),
-      `__repost:${originalPostId}__`
+      ...metadataTags
     ]
     
     const result = await supabase
@@ -950,13 +977,14 @@ export async function repostPost(originalPostId: string, userId: string, comment
     throw error
   }
 
-  // Always add original post data to the repost
-  // Even if database columns don't exist, attach the original post data
+  // Always add original post data and comment to the repost
+  // Even if database columns don't exist, attach the data
   return {
     ...data,
     original_post: originalPost,
     is_repost: true, // Mark as repost even if column doesn't exist
-    original_post_id: originalPostId // Attach ID even if column doesn't exist
+    original_post_id: originalPostId, // Attach ID even if column doesn't exist
+    repost_comment: comment || null // Attach comment even if column doesn't exist
   }
 }
 
