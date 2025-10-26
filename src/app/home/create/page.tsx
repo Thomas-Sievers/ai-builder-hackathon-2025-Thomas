@@ -1,10 +1,16 @@
 'use client'
 
 import { useAuth } from '@/contexts/AuthContext'
-import { PostCreationForm } from '@/components/posts/PostCreationForm'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, Suspense, lazy } from 'react'
 import { Loader2 } from 'lucide-react'
+
+// Lazy load the PostCreationForm component
+const PostCreationForm = lazy(() => 
+  import('@/components/posts/PostCreationForm').then(module => ({ 
+    default: module.PostCreationForm 
+  }))
+)
 
 export default function CreatePostPage() {
   const { user, loading } = useAuth()
@@ -47,7 +53,16 @@ export default function CreatePostPage() {
             </p>
           </div>
 
-          <PostCreationForm onPostCreated={handlePostCreated} />
+          <Suspense fallback={
+            <div className="flex items-center justify-center py-8">
+              <div className="flex items-center gap-2 text-white">
+                <Loader2 className="w-6 h-6 animate-spin" />
+                <span>Loading form...</span>
+              </div>
+            </div>
+          }>
+            <PostCreationForm onPostCreated={handlePostCreated} />
+          </Suspense>
         </div>
       </div>
     </div>
