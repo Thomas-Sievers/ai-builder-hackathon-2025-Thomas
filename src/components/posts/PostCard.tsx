@@ -50,7 +50,8 @@ export function PostCard({
   const [copied, setCopied] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  const isOwner = currentUserId === post.user_id
+  const isOwner = !!currentUserId && currentUserId === post.user_id
+  
   const contentPreview = post.content && post.content.length > 200
   const displayContent = contentPreview && !showFullContent 
     ? post.content!.substring(0, 200) + '...' 
