@@ -141,14 +141,24 @@ export async function getPosts(limit = 20, offset = 0) {
   if (error) throw error
   
   // Fetch original posts for reposts
-  // Check original_post_id field to detect reposts
+  // Check original_post_id field or __repost:ID__ tag to detect reposts
   const postsWithOriginal = await Promise.all(
     (data || []).map(async (post) => {
-      if (post.original_post_id) {
+      let originalPostId = post.original_post_id
+      
+      // If no original_post_id, check tags for __repost:ID__ format
+      if (!originalPostId && post.tags) {
+        const repostTag = post.tags.find((tag: string) => tag.startsWith('__repost:'))
+        if (repostTag) {
+          originalPostId = repostTag.replace('__repost:', '').replace('__', '')
+        }
+      }
+      
+      if (originalPostId) {
         const { data: originalPost } = await supabase
           .from('posts')
           .select('*, users (*)')
-          .eq('id', post.original_post_id)
+          .eq('id', originalPostId)
           .single()
         if (originalPost) {
           return { ...post, original_post: originalPost, is_repost: true }
@@ -201,14 +211,24 @@ export async function getPostsWithFilters(filters?: {
   }
   
   // Fetch original posts for reposts
-  // Check original_post_id field to detect reposts
+  // Check original_post_id field or __repost:ID__ tag to detect reposts
   const postsWithOriginal = await Promise.all(
     (data || []).map(async (post) => {
-      if (post.original_post_id) {
+      let originalPostId = post.original_post_id
+      
+      // If no original_post_id, check tags for __repost:ID__ format
+      if (!originalPostId && post.tags) {
+        const repostTag = post.tags.find((tag: string) => tag.startsWith('__repost:'))
+        if (repostTag) {
+          originalPostId = repostTag.replace('__repost:', '').replace('__', '')
+        }
+      }
+      
+      if (originalPostId) {
         const { data: originalPost } = await supabase
           .from('posts')
           .select('*, users (*)')
-          .eq('id', post.original_post_id)
+          .eq('id', originalPostId)
           .single()
         if (originalPost) {
           return { ...post, original_post: originalPost, is_repost: true }
@@ -235,14 +255,24 @@ export async function getPostsByUser(userId: string, limit = 20, offset = 0) {
   if (error) throw error
   
   // Fetch original posts for reposts
-  // Check original_post_id field to detect reposts
+  // Check original_post_id field or __repost:ID__ tag to detect reposts
   const postsWithOriginal = await Promise.all(
     (data || []).map(async (post) => {
-      if (post.original_post_id) {
+      let originalPostId = post.original_post_id
+      
+      // If no original_post_id, check tags for __repost:ID__ format
+      if (!originalPostId && post.tags) {
+        const repostTag = post.tags.find((tag: string) => tag.startsWith('__repost:'))
+        if (repostTag) {
+          originalPostId = repostTag.replace('__repost:', '').replace('__', '')
+        }
+      }
+      
+      if (originalPostId) {
         const { data: originalPost } = await supabase
           .from('posts')
           .select('*, users (*)')
-          .eq('id', post.original_post_id)
+          .eq('id', originalPostId)
           .single()
         if (originalPost) {
           return { ...post, original_post: originalPost, is_repost: true }
@@ -895,9 +925,15 @@ export async function repostPost(originalPostId: string, userId: string, comment
     `)
     .single()
 
-  // If that fails (likely due to missing columns), try without repost metadata
+  // If that fails (likely due to missing columns), store repost ID in tags
   if (error && (error.message?.includes('column') || error.code === '42703')) {
-    console.log('Repost columns don\'t exist, creating regular post instead...')
+    console.log('Repost columns don\'t exist, storing repost metadata in tags...')
+    
+    // Add original post ID to tags so we can detect reposts later
+    repostData.tags = [
+      ...(repostData.tags || []),
+      `__repost:${originalPostId}__`
+    ]
     
     const result = await supabase
       .from('posts')

@@ -166,6 +166,9 @@ export function PostCard({
   const isRepost = (post.is_repost && !!post.original_post) || (post.original_post_id && !!post.original_post)
   const displayPost = isRepost && post.original_post ? post.original_post : post
 
+  // Filter out __repost:ID__ metadata tags from display
+  const displayTags = post.tags?.filter((tag: string) => !tag.startsWith('__repost:')) || []
+
   // If it's a repost, render a nested card design
   if (isRepost && post.original_post) {
     return (
@@ -299,9 +302,9 @@ export function PostCard({
           </div>
 
           {/* Tags */}
-          {displayPost.tags && displayPost.tags.length > 0 && (
+          {displayTags.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {displayPost.tags.map((tag) => (
+              {displayTags.map((tag: string) => (
                 <Badge
                   key={tag}
                   variant="secondary"
@@ -428,9 +431,9 @@ export function PostCard({
       </div>
 
       {/* Tags */}
-      {post.tags && post.tags.length > 0 && (
+      {displayTags.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-3">
-          {post.tags.map((tag) => (
+          {displayTags.map((tag: string) => (
             <Badge
               key={tag}
               variant="secondary"
