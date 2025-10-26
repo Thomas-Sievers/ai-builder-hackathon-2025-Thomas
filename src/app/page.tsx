@@ -1,13 +1,21 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Navigation } from "@/components/Navigation";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase-server";
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  // Redirect authenticated users to home page
+  if (user) {
+    redirect('/home');
+  }
+
   return (
     <div className="min-h-screen bg-black">
-      <Navigation />
-
+      
       {/* Hero Section */}
       <main className="container mx-auto px-4 py-16">
         <div className="text-center space-y-8">
@@ -31,7 +39,7 @@ export default function Home() {
 
         {/* Features Grid */}
         <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-8">
-          <Card className="bg-gray-900 border-gray-700">
+          <Card className="bg-gray-800 border-gray-700">
             <CardHeader>
               <CardTitle className="text-blue-400">Esports CV</CardTitle>
               <CardDescription className="text-gray-400">
@@ -46,7 +54,7 @@ export default function Home() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gray-900 border-gray-700">
+          <Card className="bg-gray-800 border-gray-700">
             <CardHeader>
               <CardTitle className="text-blue-400">Content Sharing</CardTitle>
               <CardDescription className="text-gray-400">
@@ -61,7 +69,7 @@ export default function Home() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gray-900 border-gray-700">
+          <Card className="bg-gray-800 border-gray-700">
             <CardHeader>
               <CardTitle className="text-blue-400">Championships</CardTitle>
               <CardDescription className="text-gray-400">
@@ -87,7 +95,7 @@ export default function Home() {
               { name: "Valorant", color: "text-red-400" },
               { name: "Dota 2", color: "text-green-400" }
             ].map((game) => (
-              <Card key={game.name} className="bg-gray-900 border-gray-700">
+              <Card key={game.name} className="bg-gray-800 border-gray-700">
                 <CardContent className="p-6 text-center">
                   <h3 className={`text-lg font-semibold ${game.color}`}>
                     {game.name}

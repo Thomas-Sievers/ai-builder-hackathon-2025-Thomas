@@ -116,6 +116,25 @@ CREATE TABLE user_connections (
   UNIQUE(follower_id, following_id)
 );
 
+-- Post likes table
+CREATE TABLE post_likes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  post_id UUID REFERENCES posts(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(post_id, user_id)
+);
+
+-- Post comments table
+CREATE TABLE post_comments (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  post_id UUID REFERENCES posts(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Premium subscriptions table
 CREATE TABLE premium_subscriptions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -144,8 +163,44 @@ CREATE INDEX idx_teams_game ON teams(game);
 CREATE INDEX idx_teams_region ON teams(region);
 CREATE INDEX idx_team_members_team_id ON team_members(team_id);
 CREATE INDEX idx_team_members_user_id ON team_members(user_id);
+CREATE INDEX idx_post_likes_post_id ON post_likes(post_id);
+CREATE INDEX idx_post_likes_user_id ON post_likes(user_id);
+CREATE INDEX idx_post_comments_post_id ON post_comments(post_id);
+CREATE INDEX idx_post_comments_user_id ON post_comments(user_id);
 CREATE INDEX idx_user_connections_follower_id ON user_connections(follower_id);
 CREATE INDEX idx_user_connections_following_id ON user_connections(following_id);
+
+-- Create functions for updating post counts
+CREATE OR REPLACE FUNCTION increment_likes_count(post_id UUID)
+RETURNS VOID AS $$
+BEGIN
+    UPDATE posts SET likes_count = likes_count + 1 WHERE id = post_id;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION decrement_likes_count(post_id UUID)
+RETURNS VOID AS $$
+BEGIN
+    UPDATE posts SET likes_count = GREATEST(likes_count - 1, 0) WHERE id = post_id;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION increment_comments_count(post_id UUID)
+RETURNS VOID AS $$
+BEGIN
+    UPDATE posts SET comments_count = comments_count + 1 WHERE id = post_id;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION decrement_comments_count(comment_id UUID)
+RETURNS VOID AS $$
+DECLARE
+    post_id UUID;
+BEGIN
+    SELECT post_id INTO post_id FROM post_comments WHERE id = comment_id;
+    UPDATE posts SET comments_count = GREATEST(comments_count - 1, 0) WHERE id = post_id;
+END;
+$$ LANGUAGE plpgsql;
 
 -- Create updated_at trigger function
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -162,6 +217,7 @@ CREATE TRIGGER update_user_profiles_updated_at BEFORE UPDATE ON user_profiles FO
 CREATE TRIGGER update_posts_updated_at BEFORE UPDATE ON posts FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_championships_updated_at BEFORE UPDATE ON championships FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_teams_updated_at BEFORE UPDATE ON teams FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_post_comments_updated_at BEFORE UPDATE ON post_comments FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_premium_subscriptions_updated_at BEFORE UPDATE ON premium_subscriptions FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Row Level Security (RLS) policies
@@ -172,6 +228,8 @@ ALTER TABLE championships ENABLE ROW LEVEL SECURITY;
 ALTER TABLE teams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE team_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_connections ENABLE ROW LEVEL SECURITY;
+ALTER TABLE post_likes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE post_comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE premium_subscriptions ENABLE ROW LEVEL SECURITY;
 
 -- Users policies
@@ -215,6 +273,17 @@ CREATE POLICY "Users can view all connections" ON user_connections FOR SELECT US
 CREATE POLICY "Users can manage their own connections" ON user_connections FOR ALL USING (
   auth.uid() = follower_id OR auth.uid() = following_id
 );
+
+-- Post likes policies
+CREATE POLICY "Post likes are viewable by everyone" ON post_likes FOR SELECT USING (true);
+CREATE POLICY "Users can create their own likes" ON post_likes FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can delete their own likes" ON post_likes FOR DELETE USING (auth.uid() = user_id);
+
+-- Post comments policies
+CREATE POLICY "Post comments are viewable by everyone" ON post_comments FOR SELECT USING (true);
+CREATE POLICY "Users can create their own comments" ON post_comments FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update their own comments" ON post_comments FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete their own comments" ON post_comments FOR DELETE USING (auth.uid() = user_id);
 
 -- Premium subscriptions policies
 CREATE POLICY "Users can view their own subscriptions" ON premium_subscriptions FOR SELECT USING (auth.uid() = user_id);

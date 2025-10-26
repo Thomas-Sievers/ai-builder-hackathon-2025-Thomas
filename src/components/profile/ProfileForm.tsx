@@ -52,7 +52,7 @@ export function ProfileForm({ profile, onUpdate, onCancel }: ProfileFormProps) {
       <ImageUpload profile={profile} onImageUpdate={handleImageUpdate} />
 
       {/* Profile Form */}
-      <Card className="bg-gray-900 border-gray-700">
+      <Card className="bg-gray-800 border-gray-700">
         <CardHeader>
           <CardTitle className="text-blue-400">Edit Profile</CardTitle>
         </CardHeader>

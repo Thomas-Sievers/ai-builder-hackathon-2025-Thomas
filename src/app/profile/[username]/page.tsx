@@ -131,7 +131,7 @@ export default function PublicProfilePage() {
 
           {/* Contact Information */}
           {(profile.location || profile.website) && (
-            <Card className="bg-gray-900 border-gray-700">
+            <Card className="bg-gray-800 border-gray-700">
               <CardHeader>
                 <CardTitle className="text-blue-400">Contact Information</CardTitle>
               </CardHeader>

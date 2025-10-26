@@ -23,7 +23,7 @@ export function ProfileDisplay({ profile, showPublicLink = true }: ProfileDispla
   }
 
   return (
-    <Card className="bg-gray-900 border-gray-700">
+    <Card className="bg-gray-800 border-gray-700">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">

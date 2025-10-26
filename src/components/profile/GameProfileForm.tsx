@@ -164,7 +164,7 @@ export function GameProfileForm({ game, profile, onUpdate, onCancel }: GameProfi
         <div className="space-y-2">
           <Label className="text-gray-300">{fieldConfig.label}</Label>
           <Select
-            value={formData[fieldKey as keyof typeof formData]}
+            value={String(formData[fieldKey as keyof typeof formData])}
             onValueChange={(value) => handleChange(fieldKey, value)}
           >
             <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
@@ -211,7 +211,7 @@ export function GameProfileForm({ game, profile, onUpdate, onCancel }: GameProfi
   }
 
   return (
-    <Card className="bg-gray-900 border-gray-700">
+    <Card className="bg-gray-800 border-gray-700">
       <CardHeader>
         <div className="flex items-center space-x-3">
           <div className={`w-8 h-8 rounded ${gameConfig.color} flex items-center justify-center`}>

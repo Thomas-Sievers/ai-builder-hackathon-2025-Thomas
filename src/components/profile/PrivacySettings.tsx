@@ -52,7 +52,7 @@ export function PrivacySettings({ profile, onUpdate }: PrivacySettingsProps) {
   }
 
   return (
-    <Card className="bg-gray-900 border-gray-700">
+    <Card className="bg-gray-800 border-gray-700">
       <CardHeader>
         <CardTitle className="text-blue-400">Privacy Settings</CardTitle>
       </CardHeader>

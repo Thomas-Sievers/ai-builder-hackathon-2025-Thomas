@@ -25,7 +25,7 @@ export default function SignIn() {
 
     try {
       await signIn(email, password)
-      router.push('/dashboard')
+      router.push('/home')
     } catch (error: any) {
       setError(error.message)
     } finally {

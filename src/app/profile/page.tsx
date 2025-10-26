@@ -13,17 +13,29 @@ import { HighlightReel } from '@/components/profile/HighlightReel'
 import { PrivacySettings } from '@/components/profile/PrivacySettings'
 import { supabase } from '@/lib/supabase'
 import { Database } from '@/types/database'
+import { LogOut } from 'lucide-react'
+import { toast } from 'sonner'
 
 type User = Database['public']['Tables']['users']['Row']
 type UserProfile = Database['public']['Tables']['user_profiles']['Row']
 
 export default function ProfilePage() {
-  const { user, loading } = useAuth()
+  const { user, loading, signOut } = useAuth()
   const router = useRouter()
   const [profile, setProfile] = useState<User | null>(null)
   const [gameProfiles, setGameProfiles] = useState<UserProfile[]>([])
   const [isEditing, setIsEditing] = useState(false)
   const [loadingProfile, setLoadingProfile] = useState(true)
+
+  const handleSignOut = async () => {
+    try {
+      await signOut()
+      router.push('/')
+    } catch (error) {
+      console.error('Error signing out:', error)
+      toast.error('Failed to sign out')
+    }
+  }
 
   useEffect(() => {
     if (!loading && !user) {
@@ -142,13 +154,23 @@ export default function ProfilePage() {
           {/* Header */}
           <div className="flex justify-between items-center">
             <h1 className="text-3xl font-bold text-blue-400">My Profile</h1>
-            <Button
-              onClick={() => setIsEditing(!isEditing)}
-              variant={isEditing ? "outline" : "default"}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {isEditing ? 'Cancel' : 'Edit Profile'}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setIsEditing(!isEditing)}
+                variant={isEditing ? "outline" : "default"}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {isEditing ? 'Cancel' : 'Edit Profile'}
+              </Button>
+              <Button
+                onClick={handleSignOut}
+                variant="outline"
+                className="border-gray-600 text-gray-300 hover:bg-gray-800"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+              </Button>
+            </div>
           </div>
 
           {/* Profile Completion Indicator */}

@@ -185,7 +185,7 @@ export function HighlightReel({ userId, isEditing }: HighlightReelProps) {
 
   if (loading) {
     return (
-      <Card className="bg-gray-900 border-gray-700">
+      <Card className="bg-gray-800 border-gray-700">
         <CardContent className="p-6">
           <div className="text-center text-gray-400">Loading highlights...</div>
         </CardContent>
@@ -194,7 +194,7 @@ export function HighlightReel({ userId, isEditing }: HighlightReelProps) {
   }
 
   return (
-    <Card className="bg-gray-900 border-gray-700">
+    <Card className="bg-gray-800 border-gray-700">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-blue-400">Highlight Reel</CardTitle>

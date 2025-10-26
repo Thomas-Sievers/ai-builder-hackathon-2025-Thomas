@@ -60,7 +60,7 @@ export function ProfileCompletionIndicator({ profile, gameProfiles }: ProfileCom
   }
 
   return (
-    <Card className="bg-gray-900 border-gray-700">
+    <Card className="bg-gray-800 border-gray-700">
       <CardHeader>
         <CardTitle className="text-blue-400">Profile Completion</CardTitle>
       </CardHeader>
